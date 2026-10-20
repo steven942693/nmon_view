@@ -42,12 +42,13 @@ def main():
     if tag != f'v{version}':
         raise ValueError('标签与实际构建版本不一致')
 
-    # 标签必须精确指向产物源码；没有标签时交由 Release API 创建。
+    # 标签必须预先存在并精确指向产物源码，发布流程不创建或移动标签。
     try:
         request(f'{api}/git/ref/tags/{tag}')
     except urllib.error.HTTPError as error:
         if error.code != 404:
             raise
+        raise ValueError('请先创建并推送指向构建源码的版本标签') from error
     else:
         existing_tag = request(f'{api}/commits/{tag}')
         if existing_tag['sha'] != commit:
@@ -90,7 +91,7 @@ def main():
             '未做 Apple 开发者签名和公证，首次打开可能被系统拦截。\n\n'
             '构建与自动化解析测试通过；Mac、Linux 的实际图形界面仍需目标机器验收。')
     if release is None:
-        release = request(f'{api}/releases', 'POST', {'tag_name': tag, 'target_commitish': commit,
+        release = request(f'{api}/releases', 'POST', {'tag_name': tag,
                           'name': f'nmon View {tag}', 'body': body, 'draft': True, 'prerelease': False})
     assets = {a['name']: a for a in request(f'{api}/releases/{release["id"]}/assets?per_page=100')}
     if set(assets) - set(files):
