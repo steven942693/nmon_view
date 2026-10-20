@@ -1,0 +1,53 @@
+name: 发布已验证的桌面安装包
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '版本标签，例如 v0.1.0，必须与构建版本一致'
+        required: true
+        type: string
+      run_id:
+        description: '桌面版多平台打包的运行 ID'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      run_id:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: 校验并发布安装包
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: 获取发布脚本
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: 下载指定构建的产物
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id }}
+          pattern: nmon-view-*
+          path: release-input
+      - name: 校验源码版本、文件与哈希并发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          BUILD_RUN_ID: ${{ inputs.run_id }}
+        run: python3 desktop/scripts/publish-release.py release-input
