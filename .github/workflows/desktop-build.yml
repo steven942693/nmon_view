@@ -1,0 +1,93 @@
+name: 桌面版多平台打包
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'src/parser/**'
+      - 'src/model/**'
+      - '.github/workflows/desktop-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows-x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows
+          - name: Linux-x64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            platform: linux
+          - name: macOS-Apple-Silicon
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos
+          - name: macOS-Intel
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      CARGO_INCREMENTAL: '0'
+      # 无需 FUSE 挂载即可运行 AppImage 打包工具。
+      APPIMAGE_EXTRACT_AND_RUN: '1'
+    steps:
+      - name: 获取源码
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: 安装 Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: 安装 Linux 构建依赖
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2 rpm xdg-utils
+      - name: 安装前端依赖
+        run: npm ci
+      - name: 检查前端并构建资源
+        run: npm run build
+      - name: 验证 Rust 解析器
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: 构建解析对照工具
+        run: cargo build --locked --manifest-path src-tauri/Cargo.toml --bin nmon-json
+      - name: 验证协议与跨语言解析一致性
+        run: npm test
+      - name: 打包桌面应用
+        run: npm run tauri -- build --target ${{ matrix.target }}
+      - name: 汇总安装包与校验文件
+        run: node scripts/collect-packages.mjs ${{ matrix.target }} ${{ matrix.platform }}
+      - name: 保存安装包
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: nmon-view-${{ matrix.name }}
+          path: desktop/releases/${{ matrix.target }}/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

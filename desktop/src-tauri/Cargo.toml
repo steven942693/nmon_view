@@ -1,0 +1,21 @@
+[package]
+name = "nmon-view-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Offline nmon performance analysis desktop application"
+authors = ["Steven"]
+repository = "https://github.com/steven942693/nmon_view"
+default-run = "nmon-view-desktop"
+
+[lib]
+name = "nmon_core"
+path = "src/lib.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde_json = { version = "1", features = ["preserve_order"] }
+chrono = "0.4"

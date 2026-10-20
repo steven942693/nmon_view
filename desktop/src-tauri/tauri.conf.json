@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "nmon View",
+  "version": "0.1.0",
+  "identifier": "com.nmonview.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "nmon View · 本地性能分析",
+        "width": 1440,
+        "height": 960,
+        "minWidth": 800,
+        "minHeight": 600,
+        "backgroundColor": "#f4f6fa"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data:; connect-src ipc: http://ipc.localhost; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "shortDescription": "离线 nmon 性能分析工具",
+    "category": "DeveloperTool",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

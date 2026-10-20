@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "windows": {
+      "nsis": {
+        "languages": [
+          "SimpChinese"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser"
+      },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  }
+}

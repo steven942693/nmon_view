@@ -1,0 +1,17 @@
+node_modules/
+dist/
+artifacts/
+backups/
+releases/
+**/target/
+**/target-*/
+**/gen/
+*.nmon
+*.zip
+*.log
+.env
+.env.*
+!.env.example
+desktop/tests/preview-report.json
+.DS_Store
+Thumbs.db
